@@ -1,0 +1,2 @@
+Regex,Delimiter,Output Column Name,Group Number,Transform,Mapping File,Ignore,Append,Strip,Example
+"\s?([\?£$€])?([0-9,\.\s]*)\s?",\s\s,RRP,2,,,,,",\s",

@@ -1,0 +1,20 @@
+Regex,Delimiter,Output Column Name,Group Number,Transform,Mapping File,Ignore,Append,Example
+"Other:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Other Features,1,,,,,Other: Additional Colors
+"Product Category:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,CATEGORIES,1,,TRUE,,TRUE,Product Category: Chandeliers
+"Category:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,CATEGORIES,1,,TRUE,,TRUE,"Category: Pendants, Table"
+I[pP] Rating:\s([0-9 ]*),\s\s,IP RATING,1,IP(*),,,,IP Rating: 20
+"Bulb Type:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,LAMP2 CAP,1,,,,,Bulb Type: Incandescent
+"Number Of Lights:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,LAMP2 QTY,1,,,,,Number Of Lights: 4 Or More
+"Colour:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,APPEARANCES,1,,,,TRUE,"Colour: Black, Red, White/Cream"
+"Application:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Application,1,,,,,Application: Home
+"Features:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Features,1,,,,,Features: Wheels
+"Style:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,STYLE,1,,,,,Style: Designer
+"Shade Colour:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,APPEARANCES,1,,,,TRUE,Shade Colour: Clear
+"Details:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Details,1,,,,,Details: Soft Back
+"Shape:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Shape,1,,,,,Shape: Round
+"Ideal Fit:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Ideal Fit,1,,,,,Ideal Fit: Lamp
+"Suggested Room:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Suggested Rooms,1,,,,,"Suggested Room: Bedroom, Living Room, Living Room"
+"Special Features:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Special Features,1,,,,,"Special Features: Down Lighting, Height Adjustable"
+"Type:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Type,1,,,,,Type: Wall Torches/Wallchieres
+"Light Bulb:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Light Bulb,1,,,,,Light Bulb: Incandescent  
+"Light Bulb Type:\s([0-9a-zA-Z\&\s/',:]*)",\s\s,Light Bulb,1,,,,,Light Bulb Type: Halogen
