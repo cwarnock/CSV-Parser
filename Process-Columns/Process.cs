@@ -11,13 +11,14 @@ namespace CSV_Parser
 {
     internal class Process
     {
-        private const string Basepath = @"E:\Development\CSV-Parser\CSV-Parser\Data\";
+        private const string CsvFilepath = @"E:\Development\CSV-Parser\CSV Data\";
+        private const string AppDataFilepath = @"E:\Development\CSV-Parser\Process-Columns\AppData\";
         private const string Source = "Wayfair";
 
         private static void Main()
         {
             // Get the input CSV file
-            var parser = GetParser(Basepath + Source + @"\splitInput.csv");
+            var parser = GetParser(CsvFilepath + Source + @"\splitInput.csv");
 
             // Read the input file into a datatable, setting the first row to be the header
             var inputTable = new DataTable();
@@ -73,7 +74,7 @@ namespace CSV_Parser
 
                 // Check if there are rules for this column and if not
                 // output the column to the output file as it is
-                string filePath = Basepath + Source + @"\Rules\" + inputColumn.ColumnName + ".csv";
+                string filePath = AppDataFilepath + Source + @"\Rules\" + inputColumn.ColumnName + ".csv";
                 if (!File.Exists(filePath))
                 {
                     for (var i = 0; i < inputTable.Rows.Count; i++)
@@ -211,7 +212,7 @@ namespace CSV_Parser
                 sb.AppendLine(string.Join(",", fields));
             }
 
-            File.WriteAllText(@"E:\Development\CSV-Parser\CSV-Parser\Data\Wayfair\output.csv", sb.ToString(), Encoding.Default);
+            File.WriteAllText(CsvFilepath + Source + @"\output.csv", sb.ToString(), Encoding.Default);
         }
 
         internal static TextFieldParser GetParser(string source)
@@ -223,7 +224,7 @@ namespace CSV_Parser
 
         public static List<Mapper> GetMapsFromCsvFile(string fileName, string source)
         {
-            var parser = GetParser(Basepath + source + @"\Maps\" + fileName + ".csv");
+            var parser = GetParser(AppDataFilepath + source + @"\Maps\" + fileName + ".csv");
 
             var returnList = new List<Mapper>();
             while (!parser.EndOfData)

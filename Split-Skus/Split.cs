@@ -11,13 +11,14 @@ namespace SplitSkus
 {
     internal class Split
     {
-        private const string Basepath = @"E:\Development\CSV Parser\CSV Parser\Data\";
+        private const string CsvFilepath = @"E:\Development\CSV-Parser\CSV Data\";
+        private const string AppDataFilepath = @"E:\Development\CSV-Parser\Split-Skus\AppData\";
         private const string Source = "Wayfair";
 
         private static void Main()
         {
             // Get the input CSV file
-            var parser = GetParser(Basepath + Source + @"\raw.csv");
+            var parser = GetParser(CsvFilepath + Source + @"\raw.csv");
 
             var inputTable = new DataTable();
             var outputTable = new DataTable();
@@ -78,7 +79,7 @@ namespace SplitSkus
 
                 // Check if there are rules for this column and if not
                 // output the column to the output file as it is
-                string filePath = Basepath + Source + @"\Rules\" + inputColumn.ColumnName + ".csv";
+                string filePath = AppDataFilepath + Source + @"\Rules\" + inputColumn.ColumnName + ".csv";
                 if (!File.Exists(filePath))
                 {
                     for (var i = 0; i < inputTable.Rows.Count; i++)
@@ -216,7 +217,7 @@ namespace SplitSkus
                 sb.AppendLine(string.Join(",", fields));
             }
 
-            File.WriteAllText(@"E:\Development\CSV Parser\CSV Parser\Data\Wayfair\output.csv", sb.ToString(), Encoding.Default);
+            File.WriteAllText(CsvFilepath + Source + @"\splitInput.csv", sb.ToString(), Encoding.Default);
         }
 
         internal static TextFieldParser GetParser(string source)
@@ -228,7 +229,7 @@ namespace SplitSkus
 
         public static List<Mapper> GetMapsFromCsvFile(string fileName, string source)
         {
-            var parser = GetParser(Basepath + source + @"\Maps\" + fileName + ".csv");
+            var parser = GetParser(AppDataFilepath + source + @"\Maps\" + fileName + ".csv");
 
             var returnList = new List<Mapper>();
             while (!parser.EndOfData)
