@@ -9,19 +9,15 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace CSV_Parser
 {
-    internal class Program
+    internal class Process
     {
-        private const string Basepath = @"E:\Development\CSV Parser\CSV Parser\Data\";
-        private static string _source = "Wayfair";
+        private const string Basepath = @"E:\Development\CSV-Parser\CSV-Parser\Data\";
+        private const string Source = "Wayfair";
 
         private static void Main()
         {
-            // Get the brand name from the user
-            //Console.WriteLine("Enter brand name:");
-            //_source = Console.ReadLine();
-
             // Get the input CSV file
-            var parser = GetParser(Basepath + _source + @"\input.csv");
+            var parser = GetParser(Basepath + Source + @"\splitInput.csv");
 
             // Read the input file into a datatable, setting the first row to be the header
             var inputTable = new DataTable();
@@ -48,7 +44,7 @@ namespace CSV_Parser
                     // update the header flag
 
                     if (inputColumns.Length==1&& inputColumns[0].Contains("\t"))
-                        inputColumns = inputColumns[0].Split(new string[] {"\t"}, 1000, StringSplitOptions.None);
+                        inputColumns = inputColumns[0].Split(new[] {"\t"}, 1000, StringSplitOptions.None);
 
                     foreach (string col in inputColumns)
                         inputTable.Columns.Add().ColumnName = col;
@@ -77,7 +73,7 @@ namespace CSV_Parser
 
                 // Check if there are rules for this column and if not
                 // output the column to the output file as it is
-                string filePath = Basepath + _source + @"\Rules\" + inputColumn.ColumnName + ".csv";
+                string filePath = Basepath + Source + @"\Rules\" + inputColumn.ColumnName + ".csv";
                 if (!File.Exists(filePath))
                 {
                     for (var i = 0; i < inputTable.Rows.Count; i++)
@@ -164,7 +160,7 @@ namespace CSV_Parser
                             // Apply mapping
                             if (rule.MappingFile)
                             {
-                                var maps = GetMapsFromCsvFile(rule.OutputColumnName, _source);
+                                var maps = GetMapsFromCsvFile(rule.OutputColumnName, Source);
 
                                 foreach (Mapper t in maps)
                                     if (t.Match == value)
@@ -215,7 +211,7 @@ namespace CSV_Parser
                 sb.AppendLine(string.Join(",", fields));
             }
 
-            File.WriteAllText(@"E:\Development\CSV Parser\CSV Parser\Data\Wayfair\output.csv", sb.ToString(), Encoding.Default);
+            File.WriteAllText(@"E:\Development\CSV-Parser\CSV-Parser\Data\Wayfair\output.csv", sb.ToString(), Encoding.Default);
         }
 
         internal static TextFieldParser GetParser(string source)
