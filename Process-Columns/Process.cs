@@ -11,7 +11,7 @@ namespace CSV_Parser
 {
     internal class Process
     {
-        private const string CsvFilepath = @"E:\Development\CSV-Parser\CSV Data\";
+        private const string CsvFilepath = @"E:\Development\CSV-Parser\CSV-Data\";
         private const string AppDataFilepath = @"E:\Development\CSV-Parser\Process-Columns\AppData\";
         private const string Source = "Wayfair";
 
@@ -41,27 +41,35 @@ namespace CSV_Parser
                 int colIdx = 0;
                 if (isHeader)
                 {
-                    // This is the header so name the columns and
-                    // update the header flag
-
+                    // If there is just one column but it contains tabs then split on the tabs
+                    // (this can happen if you cut-and-paste from SSMS)
                     if (inputColumns.Length==1&& inputColumns[0].Contains("\t"))
                         inputColumns = inputColumns[0].Split(new[] {"\t"}, 1000, StringSplitOptions.None);
 
+                    // This is the header so name the columns
                     foreach (string col in inputColumns)
                         inputTable.Columns.Add().ColumnName = col;
+
+                    // Update the header flag
                     isHeader = false;
                 }
                 else
                 {
                     // This is a data row so add it to the table
+                    // First create a new row in the imput table
                     DataRow drInput = inputTable.NewRow();
+
+                    // Add each string in the input columns array to the datatable
                     foreach (string col in inputColumns)
                     {
                         drInput[colIdx] = col;
                         colIdx++;
                     }
+
+                    // Add the row to the datatable
                     inputTable.Rows.Add(drInput);
 
+                    // todo - why does this happen?
                     DataRow drOutput = outputTable.NewRow();
                     outputTable.Rows.Add(drOutput);
                 }
@@ -214,7 +222,7 @@ namespace CSV_Parser
 
             File.WriteAllText(CsvFilepath + Source + @"\output.csv", sb.ToString(), Encoding.Default);
         }
-
+        
         internal static TextFieldParser GetParser(string source)
         {
             var parser = new TextFieldParser(source) { TextFieldType = FieldType.Delimited };

@@ -11,7 +11,7 @@ namespace SplitSkus
 {
     internal class Split
     {
-        private const string CsvFilepath = @"E:\Development\CSV-Parser\CSV Data\";
+        private const string CsvFilepath = @"E:\Development\CSV-Parser\CSV-Data\";
         private const string AppDataFilepath = @"E:\Development\CSV-Parser\Split-Skus\AppData\";
         private const string Source = "Wayfair";
 
@@ -21,17 +21,16 @@ namespace SplitSkus
             var parser = GetParser(CsvFilepath + Source + @"\raw.csv");
 
             var inputTable = new DataTable();
-            var outputTable = new DataTable();
             bool isHeader = true;
-            
+
             // Read the input file into a datatable, setting the first row to be the header
             while (!parser.EndOfData)
             {
                 // Try to read the next row
-                string[] inputColumns;
+                string[] inputRows;
                 try
                 {
-                    inputColumns = parser.ReadFields();
+                    inputRows = parser.ReadFields();
                 }
                 catch
                 {
@@ -39,18 +38,18 @@ namespace SplitSkus
                 }
 
                 // If we didn't get any data move on to the next row
-                if (inputColumns == null) continue;
+                if (inputRows == null) continue;
 
                 int colIdx = 0;
                 if (isHeader)
                 {
                     // If there is just one column but it contains tabs then split on the tabs
                     // (this can happen if you cut-and-paste from SSMS)
-                    if (inputColumns.Length==1&& inputColumns[0].Contains("\t"))
-                        inputColumns = inputColumns[0].Split(new[] {"\t"}, 1000, StringSplitOptions.None);
+                    if (inputRows.Length == 1 && inputRows[0].Contains("\t"))
+                        inputRows = inputRows[0].Split(new[] { "\t" }, 1000, StringSplitOptions.None);
 
                     // This is the header so name the columns
-                    foreach (string col in inputColumns)
+                    foreach (string col in inputRows)
                         inputTable.Columns.Add().ColumnName = col;
 
                     // Update the header flag
@@ -59,165 +58,55 @@ namespace SplitSkus
                 else
                 {
                     // This is a data row so add it to the table
+                    // First create a new row in the imput table
                     DataRow drInput = inputTable.NewRow();
-                    foreach (string col in inputColumns)
+
+                    // Add each string in the input columns array to the datatable
+                    foreach (string col in inputRows)
                     {
                         drInput[colIdx] = col;
                         colIdx++;
                     }
-                    inputTable.Rows.Add(drInput);
 
-                    DataRow drOutput = outputTable.NewRow();
-                    outputTable.Rows.Add(drOutput);
+                    // Add the row to the datatable
+                    inputTable.Rows.Add(drInput);
                 }
             }
 
-            foreach (DataColumn inputColumn in inputTable.Columns)
+            // If the input table doesn't contain a Brand Item Codes column 
+            // output the input table as it is
+            if (!inputTable.Columns.Contains("Brand Item Codes"))
             {
-                // Add a column to the output table
-                outputTable.Columns.Add(new DataColumn(inputColumn.ColumnName));
+                OutputDataTableAsCSV(inputTable);
+                return;
+            }
 
-                // Check if there are rules for this column and if not
-                // output the column to the output file as it is
-                string filePath = AppDataFilepath + Source + @"\Rules\" + inputColumn.ColumnName + ".csv";
-                if (!File.Exists(filePath))
+            var outputTable = inputTable.Clone();
+
+            foreach (DataRow inputRow in inputTable.Rows)
+            {
+                // Get the Brand Item Code and check if there are more than 1
+                var bics = inputRow["Brand Item Codes"].ToString().Split(new[] { @" / " }, 1000, StringSplitOptions.None);
+
+                // If there are not multiple SKUs just copy the row into the output table
+                if (bics.Length <= 1)
                 {
-                    for (var i = 0; i < inputTable.Rows.Count; i++)
-                    {
-                        if (!outputTable.Columns.Contains(inputColumn.ColumnName))
-                            outputTable.Columns.Add(new DataColumn(inputColumn.ColumnName));
-                        outputTable.Rows[i][inputColumn.ColumnName] = inputTable.Rows[i][inputColumn.ColumnName].ToString();
-                    }
-
+                    outputTable.ImportRow(inputRow);
                     continue;
                 }
 
-                // Get the rules 
-                parser = GetParser(filePath);
-                var rulesList = new List<Rule>();
-                while (!parser.EndOfData)
+                foreach (string bic in bics)
                 {
-                    string[] cols = parser.ReadFields();
-                    if (cols == null || cols[0] == "Regex") continue;
-                    rulesList.Add(new Rule
-                    {
-                        Regex = cols.Any() ? cols[0] : "",
-                        Delimiter = cols.Count() >= 2 ? cols[1] : "",
-                        OutputColumnName = cols.Count() >= 3 ? cols[2] : "",
-                        GroupNumber = cols.Count() >= 4 ?IntTryParse(cols[3]) : 0,
-                        Transform = cols.Count() >= 5 ? cols[4] : "",
-                        MappingFile = cols.Count() >= 6 && BoolTryParse(cols[5]),
-                        Ignore = cols.Count()>=7 && BoolTryParse(cols[6]),
-                        Append = cols.Count() >= 8 && BoolTryParse(cols[7]),
-                        Strip = cols.Count() >= 9 ? cols[8] : ""
-                    });
+                    // Copy the row and update the brand item code column to the current split bic
+                    var newRow = inputRow;
+                    newRow["Brand Item Codes"] = bic;
+
+                    // Add this row to the output table
+                    outputTable.ImportRow(newRow);
                 }
-
-                // Create a column for any input that doesn't match the rules
-                outputTable.Columns.Add(new DataColumn(inputColumn.ColumnName + "(Not Matched)"));
-
-                // Apply the rules
-                for (var i = 0; i < inputTable.Rows.Count; i++)
-                {
-                    var outputRow = outputTable.NewRow();
-
-                    // Get the contents of the cell
-                    var cell = inputTable.Rows[i][inputColumn.ColumnName];
-                    var cellContents = cell.ToString().Split(new[] { "  " }, 1000, StringSplitOptions.RemoveEmptyEntries).ToList();
-
-                    // If there are no contents output an empty cell
-                    if (!cellContents.Any() || cell.ToString() == "Unavailable" || cell.ToString() == "NULL")
-                    {
-                        if (!outputRow.Table.Columns.Contains(inputColumn.ColumnName))
-                            outputTable.Columns.Add(new DataColumn(inputColumn.ColumnName));
-                        outputRow[inputColumn.ColumnName] = "";
-                        outputTable.Rows.Add(outputRow);
-                        continue;
-                    }
-
-                    var notMatched = new List<string>(cellContents);
-
-                    foreach (var rule in rulesList)
-                    {
-                        foreach (string cellContent in cellContents)
-                        {
-                            var match = Regex.Match(cellContent, rule.Regex + rule.Delimiter, RegexOptions.IgnoreCase);
-                            if (!match.Success)
-                            {
-                                // try it without the double space ending
-                                match = Regex.Match(cellContent, rule.Regex + "$", RegexOptions.IgnoreCase);
-                                if (!match.Success) continue;
-                            }
-
-                            // Check if it's to be ignored
-                            if (rule.Ignore)
-                            {
-                                notMatched.Remove(match.Value);
-                                continue;
-                            }
-
-                            // Add a column for this data is there isn't one already
-                            if (!outputTable.Columns.Contains(rule.OutputColumnName))
-                                outputTable.Columns.Add(new DataColumn(rule.OutputColumnName));
-
-                            // Get the matched value
-                            var value = match.Groups[rule.GroupNumber].Value;
-
-                            // Apply mapping
-                            if (rule.MappingFile)
-                            {
-                                var maps = GetMapsFromCsvFile(rule.OutputColumnName, Source);
-
-                                foreach (Mapper t in maps)
-                                    if (t.Match == value)
-                                    {
-                                        value = t.Replace;
-                                        break;
-                                    }
-                            }
-
-                            // Apply transformations
-                            // If there is a (*) placeholder in the transformation replace it with the extracted value, 
-                            // otherwise replace the entire extracted value with the transformation
-                            if (!string.IsNullOrWhiteSpace(rule.Transform))
-                                value = rule.Transform.Contains("(*)") ? rule.Transform.Replace("(*)", value) : rule.Transform;
-                            
-                            // Strip any unwanted characters
-                            if (!string.IsNullOrWhiteSpace(rule.Strip))
-                                value = Regex.Replace(value, rule.Strip, "");
-
-                            // Add the value to the output row
-                            if (rule.Append)
-                            {
-                                if (!string.IsNullOrWhiteSpace(outputTable.Rows[i][rule.OutputColumnName].ToString()))
-                                    value = ", " + value;
-                                outputTable.Rows[i][rule.OutputColumnName] += value;
-                            }
-                            else
-                                outputTable.Rows[i][rule.OutputColumnName] = value;
-
-                            // remove the match from the not matched array
-                            notMatched.Remove(match.Value);
-                        }
-                    }
-
-                    outputTable.Rows[i][inputColumn.ColumnName + "(Not Matched)"] = string.Join("|#|", notMatched.ToArray());
-                }
-
             }
 
-            // Output the datatable as a CSV
-            var sb = new StringBuilder();
-            var columnNames = outputTable.Columns.Cast<DataColumn>().Select(column => "\"" + column.ColumnName.Replace("\"", "\"\"") + "\"").ToArray();
-            sb.AppendLine(string.Join(",", columnNames));
-
-            foreach (DataRow row in outputTable.Rows)
-            {
-                var fields = row.ItemArray.Select(field => "\"" + field.ToString().Replace("\"", "\"\"") + "\"").ToArray();
-                sb.AppendLine(string.Join(",", fields));
-            }
-
-            File.WriteAllText(CsvFilepath + Source + @"\splitInput.csv", sb.ToString(), Encoding.Default);
+            OutputDataTableAsCSV(outputTable);
         }
 
         internal static TextFieldParser GetParser(string source)
@@ -240,6 +129,22 @@ namespace SplitSkus
             }
 
             return returnList;
+        }
+
+        internal static void OutputDataTableAsCSV(DataTable dt)
+        {
+            // Output the datatable as a CSV
+            var sb = new StringBuilder();
+            var columnNames = dt.Columns.Cast<DataColumn>().Select(column => "\"" + column.ColumnName.Replace("\"", "\"\"") + "\"").ToArray();
+            sb.AppendLine(string.Join(",", columnNames));
+
+            foreach (DataRow row in dt.Rows)
+            {
+                var fields = row.ItemArray.Select(field => "\"" + field.ToString().Replace("\"", "\"\"") + "\"").ToArray();
+                sb.AppendLine(string.Join(",", fields));
+            }
+
+            File.WriteAllText(CsvFilepath + Source + @"\splitInput.csv", sb.ToString(), Encoding.Default);
         }
 
         public class Rule
